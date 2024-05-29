@@ -132,6 +132,14 @@ if __name__ == '__main__':
     parser.add_argument('--discsdtw', default=False, action="store_true", help="Discrimitive shapeDTW warp preset augmentation")
     parser.add_argument('--extra_tag', type=str, default="", help="Anything extra")
 
+    # MACRNN & LSTM & GRUU params
+    parser.add_argument('--lstm_hidden_dims', type=int, default=288,
+                        help='hidden layer dimensions of LSTM')
+    parser.add_argument('--lstm_layer_num', type=int, default=2,
+                        help='number of LSTM layers')
+    parser.add_argument('--matrix_dim', type=int, default=12,
+                        help='traffic matrix dimension, also the number of the nodes')
+
     args = parser.parse_args()
     # args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
     args.use_gpu = True if torch.cuda.is_available() else False
