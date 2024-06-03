@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=0
 
 model_name=MACRNN
 
@@ -7,7 +7,7 @@ python -u run.py \
   --is_training 1 \
   --root_path ./dataset/TM/Abilene/\
   --data_path  AbileneTM-deoutlier.csv \
-  --model_id Abilene_12_1_deoutlier \
+  --model_id Abilene_12_1_deoutlier_offadj \
   --model $model_name \
   --data Abilene \
   --features M \
@@ -24,7 +24,8 @@ python -u run.py \
   --batch_size 32 \
   --des 'Exp' \
   --itr 1 \
-  --train_epochs 10 \
+  --train_epochs 1000 \
   --learning_rate 0.0001 \
-  --patience 3 \
+  --patience 1000 \
+  --lradj off \
   # --loss 'RMSE' \

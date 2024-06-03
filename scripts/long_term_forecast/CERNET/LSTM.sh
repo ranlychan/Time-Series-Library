@@ -7,7 +7,7 @@ python -u run.py \
   --is_training 1 \
   --root_path ./dataset/TM/CERNET/\
   --data_path  CERNET-fixdate.csv \
-  --model_id CERNET_12_1 \
+  --model_id CERNET_12_1_offadj \
   --model $model_name \
   --data CERNET \
   --features M \
@@ -24,4 +24,5 @@ python -u run.py \
   --train_epochs 1000 \
   --learning_rate 0.0001 \
   --patience 1000 \
+  --lradj off \
   # --loss 'RMSE' \

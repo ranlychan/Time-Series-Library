@@ -263,7 +263,7 @@ class TwoStageAttentionLayer(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
 
-        self.norm1 = nn.LayerNorm(d_model)
+        self.norm1 = nn.LayerNorm(d_model) 
         self.norm2 = nn.LayerNorm(d_model)
         self.norm3 = nn.LayerNorm(d_model)
         self.norm4 = nn.LayerNorm(d_model)
@@ -300,3 +300,53 @@ class TwoStageAttentionLayer(nn.Module):
         final_out = rearrange(dim_enc, '(b seg_num) ts_d d_model -> b ts_d seg_num d_model', b=batch)
 
         return final_out
+
+class SpatioTemporalAttention(nn.Module):
+    def __init__(self, in_channels, out_channels, mask_flag=True, scale=None, attention_dropout=0.1, output_attention=False):
+        super(SpatioTemporalAttention, self).__init__()
+        self.query_conv = nn.Conv3d(in_channels, out_channels, kernel_size=1)
+        self.key_conv = nn.Conv3d(in_channels, out_channels, kernel_size=1)
+        self.value_conv = nn.Conv3d(in_channels, out_channels, kernel_size=1)
+        self.scale = scale
+        self.mask_flag = mask_flag
+        self.output_attention = output_attention
+        self.dropout = nn.Dropout(attention_dropout)
+
+    def forward(self, queries, keys, values, attn_mask=None):
+        B, T, H, W, C = queries.shape
+        scale = self.scale or 1. / np.sqrt(C)
+
+        # Compute query, key, and value matrices
+        Q = self.query_conv(queries.permute(0, 4, 1, 2, 3))  # [B, C, T, H, W] -> [B, D, T, H, W]
+        K = self.key_conv(keys.permute(0, 4, 1, 2, 3))        # [B, C, T, H, W] -> [B, D, T, H, W]
+        V = self.value_conv(values.permute(0, 4, 1, 2, 3))    # [B, C, T, H, W] -> [B, D, T, H, W]
+
+        # Reshape for attention computation
+        Q = Q.view(B, -1, T * H * W).permute(0, 2, 1)  # [B, D, T*H*W] -> [B, T*H*W, D]
+        K = K.view(B, -1, T * H * W).permute(0, 2, 1)  # [B, D, T*H*W] -> [B, T*H*W, D]
+        V = V.view(B, -1, T * H * W).permute(0, 2, 1)  # [B, D, T*H*W] -> [B, T*H*W, D]
+
+        # Compute attention scores
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, T*H*W, T*H*W]
+
+        # Apply mask if needed
+        if self.mask_flag and attn_mask is not None:
+            scores.masked_fill_(attn_mask.mask, -np.inf)
+
+        # Compute attention weights
+        A = self.dropout(torch.softmax(scores, dim=-1))  # [B, T*H*W, T*H*W]
+
+        # Apply attention weights to value
+        V = torch.matmul(A, V)  # [B, T*H*W, D]
+        V = V.permute(0, 2, 1).view(B, -1, T, H, W)  # [B, T*H*W, D] -> [B, D, T, H, W]
+
+        if self.output_attention:
+            return V.permute(0, 2, 3, 4, 1).contiguous(), A  # [B, D, T, H, W] -> [B, T, H, W, D]
+        else:
+            return V.permute(0, 2, 3, 4, 1).contiguous(), None  # [B, D, T, H, W] -> [B, T, H, W, D]
+
+# Example usage
+# input_tensor = torch.randn(8, 10, 32, 32, 3)  # Batch of 8 samples, 10 time steps, 32x32 spatial dimensions, 3 channels
+# model = SpatioTemporalAttention(in_channels=3, out_channels=16)
+# output_tensor, attention_weights = model(input_tensor, input_tensor, input_tensor)
+# print(output_tensor.shape)  # Output shape should be [8, 10, 32, 32, 16]

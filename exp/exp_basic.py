@@ -3,7 +3,7 @@ import torch
 from models import Autoformer, Transformer, TimesNet, Nonstationary_Transformer, DLinear, FEDformer, \
     Informer, LightTS, Reformer, ETSformer, Pyraformer, PatchTST, MICN, Crossformer, FiLM, iTransformer, \
     Koopa, TiDE, FreTS, TimeMixer, TSMixer, SegRNN, TemporalFusionTransformer, MACRNN, \
-    LSTM, GRU #, MambaSimple, Mamba,
+    LSTM, GRU, iDTransformer, ISTER #, MambaSimple, Mamba,
 
 
 class Exp_Basic(object):
@@ -38,6 +38,8 @@ class Exp_Basic(object):
             'MACRNN':MACRNN,
             'LSTM':LSTM,
             'GRU':GRU,
+            'iDTransformer':iDTransformer,
+            'ISTER':ISTER,
         }
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)
